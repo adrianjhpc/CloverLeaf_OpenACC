@@ -60,7 +60,7 @@ CONTAINS
 
     INTEGER :: j,k
 
-    REAL(KIND=8)  :: recip_volume,energy_change,min_cell_volume
+    REAL(KIND=8)  :: recip_volume,energy_change
     REAL(KIND=8)  :: right_flux,left_flux,top_flux,bottom_flux,total_flux
     REAL(KIND=8)  :: volume_change_s
 
@@ -76,7 +76,7 @@ CONTAINS
 
 !$ACC LOOP INDEPENDENT
       DO k=y_min,y_max
-!$ACC LOOP INDEPENDENT PRIVATE(right_flux,left_flux,top_flux,bottom_flux,total_flux,min_cell_volume,energy_change,recip_volume,volume_change_s)
+!$ACC LOOP INDEPENDENT PRIVATE(right_flux,left_flux,top_flux,bottom_flux,total_flux,energy_change,recip_volume,volume_change_s)
         DO j=x_min,x_max
 
           left_flux=  (xarea(j  ,k  )*(xvel0(j  ,k  )+xvel0(j  ,k+1)                     &
@@ -91,10 +91,6 @@ CONTAINS
 
           volume_change_s=volume(j,k)/(volume(j,k)+total_flux)
 
-          min_cell_volume=MIN(volume(j,k)+right_flux-left_flux+top_flux-bottom_flux &
-            ,volume(j,k)+right_flux-left_flux                      &
-            ,volume(j,k)+top_flux-bottom_flux)
- 
           recip_volume=1.0/volume(j,k)
 
           energy_change=(pressure(j,k)/density0(j,k)+viscosity(j,k)/density0(j,k))*total_flux*recip_volume
@@ -113,7 +109,7 @@ CONTAINS
 
 !$ACC LOOP INDEPENDENT
       DO k=y_min,y_max
-!$ACC LOOP INDEPENDENT PRIVATE(right_flux,left_flux,top_flux,bottom_flux,total_flux,min_cell_volume,energy_change,recip_volume,volume_change_s)
+!$ACC LOOP INDEPENDENT PRIVATE(right_flux,left_flux,top_flux,bottom_flux,total_flux,energy_change,recip_volume,volume_change_s)
         DO j=x_min,x_max
 
           left_flux=  (xarea(j  ,k  )*(xvel0(j  ,k  )+xvel0(j  ,k+1)                     &
@@ -128,10 +124,6 @@ CONTAINS
 
           volume_change_s=volume(j,k)/(volume(j,k)+total_flux)
 
-          min_cell_volume=MIN(volume(j,k)+right_flux-left_flux+top_flux-bottom_flux &
-            ,volume(j,k)+right_flux-left_flux                      &
-            ,volume(j,k)+top_flux-bottom_flux)
- 
           recip_volume=1.0/volume(j,k)
 
           energy_change=(pressure(j,k)/density0(j,k)+viscosity(j,k)/density0(j,k))*total_flux*recip_volume
