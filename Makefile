@@ -19,45 +19,6 @@
 #  @author Wayne Gaudin, Andy Herdman
 #  @details Agnostic, platform independent makefile for the Clover Leaf benchmark code.
 
-# It is not meant to be clever in anyway, just a simple build out of the box script.
-# Just make sure mpif90 is in your path. It uses mpif90 even for all builds because this abstracts the base
-#  name of the compiler. If you are on a system that doesn't use mpif90, just replace mpif90 with the compiler name
-#  of choice. The only mpi dependencies in this non-MPI version are mpi_wtime in timer.f90.
-
-# There is no single way of turning OpenMP compilation on with all compilers.
-# The known compilers have been added as a variable. By default the make
-#  will use no options, which will work on Cray for example, but not on other
-#  compilers.
-# To select a OpenMP compiler option, do this in the shell before typing make:-
-#
-#  export COMPILER=INTEL       # to select the Intel flags
-#  export COMPILER=SUN         # to select the Sun flags
-#  export COMPILER=GNU         # to select the Gnu flags
-#  export COMPILER=CRAY        # to select the Cray flags
-#  export COMPILER=PGI         # to select the PGI flags
-#  export COMPILER=PATHSCALE   # to select the Pathscale flags
-#  export COMPILER=XL          # to select the IBM Xlf flags
-
-# or this works as well:-
-#
-# make COMPILER=INTEL
-# make COMPILER=SUN
-# make COMPILER=GNU
-# make COMPILER=CRAY
-# make COMPILER=PGI
-# make COMPILER=PATHSCALE
-# make COMPILER=XL
-#
-
-# Don't forget to set the number of threads you want to use, like so
-# export OMP_NUM_THREADS=4
-
-# usage: make                     # Will make the binary
-#        make clean               # Will clean up the directory
-#        make DEBUG=1             # Will select debug options. If a compiler is selected, it will use compiler specific debug options
-#        make IEEE=1              # Will select debug options as long as a compiler is selected as well
-# e.g. make COMPILER=INTEL MPI_COMPILER=mpiifort C_MPI_COMPILER=mpiicc DEBUG=1 IEEE=1 # will compile with the intel compiler with intel debug and ieee flags included
-
 ifndef COMPILER
   MESSAGE=select a compiler to compile in OpenMP, e.g. make COMPILER=INTEL
 endif
@@ -66,7 +27,7 @@ OMP_INTEL     = -openmp
 OMP_SUN       = -xopenmp=parallel -vpara
 OMP_GNU       = -fopenmp
 OMP_CRAY      =
-OMP_PGI       = -mp=nonuma
+OMP_PGI       = 
 OMP_PATHSCALE = -mp
 OMP_XL        = -qsmp=omp -qthreaded
 OMP=$(OMP_$(COMPILER))
@@ -75,16 +36,18 @@ FLAGS_INTEL     = -O3 -no-prec-div
 FLAGS_SUN       = -fast -xipo=2 -Xlistv4
 FLAGS_GNU       = -O3 -march=native -funroll-loops
 FLAGS_CRAY      = -em -ra -h acc_model=fast_addr:no_deep_copy:auto_async_all
-FLAGS_PGI       = -fastsse -Mipa=fast -Mlist -acc -Minfo=acc -ta=nvidia,cc35
+FLAGS_PGI       = -fast -Mlist -acc -gpu=cc90 -Minfo=accel
 FLAGS_PATHSCALE = -O3
-FLAGS_XL        = -O5 -qipa=partition=large -g -qfullpath -Q -qsigtrap -qextname=flush:ideal_gas_kernel_c:viscosity_kernel_c:pdv_kernel_c:revert_kernel_c:accelerate_kernel_c:flux_calc_kernel_c:advec_cell_kernel_c:advec_mom_kernel_c:reset_field_kernel_c:timer_c:unpack_top_bottom_buffers_c:pack_top_bottom_buffers_c:unpack_left_right_buffers_c:pack_left_right_buffers_c:field_summary_kernel_c:update_halo_kernel_c:generate_chunk_kernel_c:initialise_chunk_kernel_c:calc_dt_kernel_c:clover_unpack_message_bottom_c:clover_pack_message_bottom_c:clover_unpack_message_top_c:clover_pack_message_top_c:clover_unpack_message_right_c:clover_pack_message_right_c:clover_unpack_message_left_c:clover_pack_message_left_c -qlistopt -qattr=full -qlist -qreport -qxref=full -qsource -qsuppress=1506-224:1500-036FLAGS_          = -O3
+FLAGS_XL        = -O5 -qipa=partition=large -g -qfullpath -Q -qsigtrap -qextname=flush:ideal_gas_kernel_c:viscosity_kernel_c:pdv_kernel_c:revert_kernel_c:accelerate_kernel_c:flux_calc_kernel_c:advec_cell_kernel_c:advec_mom_kernel_c:reset_field_kernel_c:timer_c:unpack_top_bottom_buffers_c:pack_top_bottom_buffers_c:unpack_left_right_buffers_c:pack_left_right_buffers_c:field_summary_kernel_c:update_halo_kernel_c:generate_chunk_kernel_c:initialise_chunk_kernel_c:calc_dt_kernel_c:clover_unpack_message_bottom_c:clover_pack_message_bottom_c:clover_unpack_message_top_c:clover_pack_message_top_c:clover_unpack_message_right_c:clover_pack_message_right_c:clover_unpack_message_left_c:clover_pack_message_left_c -qlistopt -qattr=full -qlist -qreport -qxref=full -qsource -qsuppress=1506-224:1500-036
+FLAGS_          = -O3
+
 CFLAGS_INTEL     = -O3 -no-prec-div -restrict -fno-alias
 CFLAGS_SUN       = -fast -xipo=2
 CFLAGS_GNU       = -O3 -march=native -funroll-loops
 CFLAGS_CRAY      = -em -h list=a
-CFLAGS_PGI       = -fastsse -Mipa=fast -Mlist
+CFLAGS_PGI       = -O3 
 CFLAGS_PATHSCALE = -O3
-CFLAGS_XL       = -O5 -qipa=partition=large -g -qfullpath -Q -qlistopt -qattr=full -qlist -qreport -qxref=full -qsource -qsuppress=1506-224:1500-036 -qsrcmsg
+CFLAGS_XL        = -O5 -qipa=partition=large -g -qfullpath -Q -qlistopt -qattr=full -qlist -qreport -qxref=full -qsource -qsuppress=1506-224:1500-036 -qsrcmsg
 CFLAGS_          = -O3
 
 ifdef DEBUG
@@ -117,65 +80,76 @@ ifdef IEEE
 endif
 
 FLAGS=$(FLAGS_$(COMPILER)) $(OMP) $(I3E) $(OPTIONS)
-CFLAGS=$(CFLAGS_$(COMPILER)) $(OMP) $(I3E) $(C_OPTIONS) -c
+CFLAGS=$(CFLAGS_$(COMPILER)) $(OMP) $(I3E) $(C_OPTIONS)
 MPI_COMPILER=mpif90
 C_MPI_COMPILER=mpicc
 
-clover_leaf: c_lover *.f90 Makefile
-	$(MPI_COMPILER) $(FLAGS)	\
-	data.f90			\
-	definitions.f90			\
-	pack_kernel.f90			\
-	clover.f90			\
-	report.f90			\
-	timer.f90			\
-	parse.f90			\
-	read_input.f90			\
-	initialise_chunk_kernel.f90	\
-	initialise_chunk.f90		\
-	build_field.f90			\
-	update_tile_halo_kernel.f90	\
-	update_tile_halo.f90		\
-	update_halo_kernel.f90		\
-	update_halo.f90			\
-	ideal_gas_kernel.f90		\
-	ideal_gas.f90			\
-	start.f90			\
-	generate_chunk_kernel.f90	\
-	generate_chunk.f90		\
-	initialise.f90			\
-	field_summary_kernel.f90	\
-	field_summary.f90		\
-	viscosity_kernel.f90		\
-	viscosity.f90			\
-	calc_dt_kernel.f90		\
-	calc_dt.f90			\
-	timestep.f90			\
-	accelerate_kernel.f90		\
-	accelerate.f90			\
-	revert_kernel.f90		\
-	revert.f90			\
-	PdV_kernel.f90			\
-	PdV.f90				\
-	flux_calc_kernel.f90		\
-	flux_calc.f90			\
-	advec_cell_kernel.f90		\
-	advec_cell_driver.f90		\
-	advec_mom_kernel.f90		\
-	advec_mom_driver.f90		\
-	advection.f90			\
-	reset_field_kernel.f90		\
-	reset_field.f90			\
-	hydro.f90			\
-	visit.f90			\
-	clover_leaf.f90     \
-	timer_c.o             \
-	-o clover_leaf; echo $(MESSAGE)
+# 1. Define all Fortran sources in the order they were previously compiled
+F90_SRCS = \
+	data.f90 \
+	definitions.f90 \
+	pack_kernel.f90 \
+	clover.f90 \
+	report.f90 \
+	timer.f90 \
+	parse.f90 \
+	read_input.f90 \
+	initialise_chunk_kernel.f90 \
+	initialise_chunk.f90 \
+	build_field.f90 \
+	update_tile_halo_kernel.f90 \
+	update_tile_halo.f90 \
+	update_halo_kernel.f90 \
+	update_halo.f90 \
+	ideal_gas_kernel.f90 \
+	ideal_gas.f90 \
+	start.f90 \
+	generate_chunk_kernel.f90 \
+	generate_chunk.f90 \
+	initialise.f90 \
+	field_summary_kernel.f90 \
+	field_summary.f90 \
+	viscosity_kernel.f90 \
+	viscosity.f90 \
+	calc_dt_kernel.f90 \
+	calc_dt.f90 \
+	timestep.f90 \
+	accelerate_kernel.f90 \
+	accelerate.f90 \
+	revert_kernel.f90 \
+	revert.f90 \
+	PdV_kernel.f90 \
+	PdV.f90 \
+	flux_calc_kernel.f90 \
+	flux_calc.f90 \
+	advec_cell_kernel.f90 \
+	advec_cell_driver.f90 \
+	advec_mom_kernel.f90 \
+	advec_mom_driver.f90 \
+	advection.f90 \
+	reset_field_kernel.f90 \
+	reset_field.f90 \
+	hydro.f90 \
+	visit.f90 \
+	clover_leaf.f90
 
-c_lover: *.c Makefile
-	$(C_MPI_COMPILER) $(CFLAGS)	\
-	timer_c.c
+# 2. Map .f90 files to .o object files
+F90_OBJS = $(F90_SRCS:.f90=.o)
+C_OBJS = timer_c.o
+OBJS = $(F90_OBJS) $(C_OBJS)
 
+# 3. Final linking step
+clover_leaf: $(OBJS) Makefile
+	$(MPI_COMPILER) $(FLAGS) $(OBJS) -o clover_leaf
+	@echo $(MESSAGE)
+
+# 4. Pattern rule to compile Fortran files to objects
+%.o: %.f90 Makefile
+	$(MPI_COMPILER) $(FLAGS) -c $< -o $@
+
+# 5. Pattern rule to compile C files to objects
+%.o: %.c Makefile
+	$(C_MPI_COMPILER) $(CFLAGS) -c $< -o $@
 
 clean:
 	rm -f *.o *.mod *genmod* *cuda* *hmd* *.cu *.oo *.hmf *.lst *.cub *.ptx *.cl clover_leaf
